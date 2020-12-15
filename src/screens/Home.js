@@ -66,7 +66,9 @@ class Home extends Component {
                     })}
                 </View>
                 <View>
-                    <TouchableOpacity onPress={() => { }}>
+                    <TouchableOpacity onPress={() => {
+                        this.props.navigation.navigate('AddUser', { data: item, isEdited: true, index: index })
+                    }}>
                         <Image source={images.edit} style={styles.icon} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => {

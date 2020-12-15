@@ -15,12 +15,33 @@ class AddUser extends Component {
             inputData: [],
             email: '',
             touch: false,
+            index: null,
             allDataValidate: false,
             userDataList: [],
+            isEdited: false,
             userList: [],
+            innerIndex: null,
             GenderData: [{ name: 'FEMALE', selected: false }, { name: 'MALE', selected: false }, { name: 'Other', selected: false }]
         }
     }
+
+    componentDidMount() {
+        if (this.props.navigation.state.params != undefined) {
+            let data = this.props.navigation.state.params.data
+            this.state.GenderData.map(i => {
+                if (i.name == data.gender) { i['selected'] = true }
+            })
+            this.setState({
+                index: this.props.navigation.state.params.index,
+                isEdited: true,
+                GenderData: this.state.GenderData,
+                gender: data.gender,
+                userDataList: data.userList
+            })
+
+        }
+    }
+
     //Logical Function
     updateValue = (label, value) => {
         this.setState({ [label]: value })
@@ -91,7 +112,6 @@ class AddUser extends Component {
         let genderFlag = false
         this.state.GenderData.map((i, index) => {
             if (i['selected'] == true) {
-
                 genderFlag = true
             }
         })
@@ -104,18 +124,36 @@ class AddUser extends Component {
     }
 
     addInRedux = () => {
-        let data = {
-            'gender': this.state.gender,
-            'userList': this.state.userDataList
-        }
-        if (this.state.userDataList.length != 0) {
-            let dataArray = this.props.userList
-            dataArray.push(data)
-            this.props.AddItem(dataArray)
-            this.props.navigation.pop()
+        if (this.state.isEdited) {
+            let data = {
+                'gender': this.state.gender,
+                'userList': this.state.userDataList
+            }
+            if (this.state.userDataList.length != 0) {
+                let dataArray = this.props.userList
+                console.log("this.state.index", this.state.index);
+                dataArray[this.state.index] = data
+                this.props.AddItem(dataArray)
+                this.props.navigation.pop()
+            } else {
+                ToastAndroid.show('Enter At-List name and email', ToastAndroid.SHORT)
+            }
         } else {
-            ToastAndroid.show('Enter At-List name and email', ToastAndroid.SHORT)
+
+            let data = {
+                'gender': this.state.gender,
+                'userList': this.state.userDataList
+            }
+            if (this.state.userDataList.length != 0) {
+                let dataArray = this.props.userList
+                dataArray.push(data)
+                this.props.AddItem(dataArray)
+                this.props.navigation.pop()
+            } else {
+                ToastAndroid.show('Enter At-List name and email', ToastAndroid.SHORT)
+            }
         }
+
     }
 
     validateData = () => {
@@ -126,12 +164,14 @@ class AddUser extends Component {
 
 
     addMore = () => {
-        let temp = this.state.userList, dataList = this.state.userDataList
-        temp.push({ index: temp.length })
-        dataList.push({ name: this.state.name, email: this.state.email })
-        this.setState({ userList: temp, userDataList: dataList, name: '', email: '' }, () => {
-            //  console.log("inputData", this.state.inputData);
-        })
+        let dataList = this.state.userDataList
+        if (this.state.allDataValidate) {
+            dataList[this.state.innerIndex] = { name: this.state.name, email: this.state.email }
+            this.setState({ userDataList: dataList, name: '', email: '', allDataValidate: false })
+        } else {
+            dataList.push({ name: this.state.name, email: this.state.email })
+            this.setState({ userDataList: dataList, name: '', email: '' })
+        }
     }
 
     addMoreValidate = () => {
@@ -150,6 +190,9 @@ class AddUser extends Component {
 
     }
 
+    editinner = (data, index) => {
+        this.setState({ name: data.name, email: data.email, allDataValidate: true, innerIndex: index })
+    }
     //renderView Function
     renderItem = ({ item, index }) => {
         return (
@@ -181,14 +224,23 @@ class AddUser extends Component {
                 </View>
                 {this.state.userDataList.map((i, index) => {
                     return (
-                        <View style={styles.innerView}>
-                            <TouchableOpacity onPress={() => {
-                                this.remove(index)
-                            }}>
-                                <Image source={images.delete} style={{ alignSelf: 'flex-end' }} />
-                            </TouchableOpacity>
-                            <Text >{i.name}</Text>
-                            <Text >{i.email}</Text>
+                        <View style={[styles.innerView, { flexDirection: 'row', justifyContent: 'space-between' }]}>
+                            <View>
+                                <Text>{i.name}</Text>
+                                <Text>{i.email}</Text>
+                            </View>
+                            <View>
+                                <TouchableOpacity onPress={() => {
+                                    this.editinner(i, index)
+                                }}>
+                                    <Image source={images.edit} style={{ width: 30, height: 30, alignSelf: 'flex-end' }} />
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => {
+                                    this.remove(index)
+                                }}>
+                                    <Image source={images.delete} style={{ width: 30, height: 30, alignSelf: 'flex-end' }} />
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     )
                 }
@@ -228,7 +280,7 @@ class AddUser extends Component {
                 <TouchableOpacity
                     onPress={() => this.addMoreValidate()}
                     style={[styles.addbutton, { alignSelf: 'flex-end' }]}>
-                    <Text style={styles.adduser}>+Add More</Text>
+                    <Text style={styles.adduser}>{this.state.allDataValidate ? 'Update' : '+Add More'}</Text>
                 </TouchableOpacity>
 
             </View>
@@ -242,7 +294,7 @@ class AddUser extends Component {
             <TouchableOpacity
                 onPress={() => this.validateData()}
                 style={styles.addbutton}>
-                <Text style={styles.adduser}>Add User</Text>
+                <Text style={styles.adduser}>{this.state.isEdited ? 'Update User' : 'Add User'}</Text>
             </TouchableOpacity>
         )
     }
